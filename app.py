@@ -13,8 +13,10 @@ import httplib2
 import requests
 from datetime import datetime
 import re
+from flask_cors import CORS
 
 app = Flask(__name__)
+# CORS(app)
 engine = create_engine('sqlite:///store.db')
 Base.metadata.bin = engine
 DBSession = sessionmaker(bind=engine)
@@ -28,7 +30,7 @@ def home():
     return jsonify(categories=[r.serialize for r in categories])
 
 
-@app.route('/users')
+@app.route('/users', methods=['GET'])
 def user():
     session = DBSession()
     users = session.query(User).all()
