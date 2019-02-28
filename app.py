@@ -16,7 +16,7 @@ import re
 from flask_cors import CORS
 
 app = Flask(__name__)
-# CORS(app)
+CORS(app)
 engine = create_engine('sqlite:///store.db')
 Base.metadata.bin = engine
 DBSession = sessionmaker(bind=engine)
