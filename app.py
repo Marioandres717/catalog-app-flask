@@ -27,7 +27,10 @@ DBSession = sessionmaker(bind=engine)
 def home():
     session = DBSession()
     categories = session.query(Category).all()
-    return jsonify(categories=[r.serialize for r in categories])
+    items = session.query(Item).all()
+    response = jsonify(categories=[r.serialize for r in categories], items=[
+                       i.serialize for i in items])
+    return response
 
 
 @app.route('/users', methods=['GET'])
