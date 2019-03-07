@@ -12,7 +12,6 @@ import json
 import httplib2
 import requests
 from datetime import datetime
-import re
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -45,6 +44,64 @@ def items():
     session = DBSession()
     items = session.query(Item).all()
     return jsonify(items=[i.serialize for i in items])
+
+
+@app.route('/fbconnect', methods=['POST'])
+def fbconnect():
+    # Verify Request token
+    access_token = request.json['data']
+    app_id = json.loads(open('fb_client_secrets.json', 'r').read())[
+        'web']['app_id']
+    app_secret = json.loads(open('fb_client_secrets.json', 'r').read())[
+        'web']['app_secret']
+    url = 'https://graph.facebook.com/debug_token?input_token=%s&access_token=%s|%s' % (  # noqa
+        access_token, app_id, app_secret)
+    h = httplib2.Http()
+    results = h.request(url, 'GET')[1]
+    verified_Token = json.loads(results)['data']
+    # Checks if the app_id on the token is the same as our app_id
+    if (verified_Token['app_id'] != app_id):
+        return 'Invalid token'
+    # Check if the token send by client is still valid
+    if (verified_Token['is_valid'] is not True):
+        return 'Invalid token'
+
+    # Retrieve user information
+    fb_user_id = verified_Token['user_id']
+    url = 'https://graph.facebook.com/%s?fields=name,email,picture&access_token=%s' % (  # noqa
+        fb_user_id, access_token)
+    h = httplib2.Http()
+    results = h.request(url, 'GET')[1]
+    user_profile = json.loads(results)
+    user_id = getUserID(user_profile['email'])
+    if not user_id:
+        user_id = createUser(user_profile)
+    return jsonify(user_id)
+
+
+def getUserID(email):
+    try:
+        session = DBSession()
+        user = session.query(User).filter_by(email=email).one()
+        return user.id
+    except:
+        return None
+
+
+def createUser(user):
+    session = DBSession()
+    newUser = User(email=user['email'], name=user['name'],
+                   picture=user['picture']['data']['url'])
+    session.add(newUser)
+    session.commit()
+    user = session.query(User).filter_by(email=user['email']).one()
+    return user.id
+
+
+def getUserInfo(user_id):
+    session = DBSession()
+    user = session.query(user).filter_by(id=user_id).one()
+    return user
 
 
 if __name__ == '__main__':
