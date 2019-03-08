@@ -13,6 +13,8 @@ import httplib2
 import requests
 from datetime import datetime
 from flask_cors import CORS
+import hashlib
+import hmac
 
 app = Flask(__name__)
 CORS(app)
@@ -68,8 +70,9 @@ def fbconnect():
 
     # Retrieve user information
     fb_user_id = verified_Token['user_id']
-    url = 'https://graph.facebook.com/%s?fields=name,email,picture&access_token=%s' % (  # noqa
-        fb_user_id, access_token)
+    app_secret_proof = generateAppSecretProof(app_secret, access_token)
+    url = 'https://graph.facebook.com/%s?fields=name,email,picture&access_token=%s&appsecret_proof=%s' % (  # noqa
+        fb_user_id, access_token, app_secret_proof)
     h = httplib2.Http()
     results = h.request(url, 'GET')[1]
     user_profile = json.loads(results)
@@ -102,6 +105,15 @@ def getUserInfo(user_id):
     session = DBSession()
     user = session.query(user).filter_by(id=user_id).one()
     return user
+
+
+def generateAppSecretProof(app_secret, access_token):
+    h = hmac.new(
+        app_secret.encode('utf-8'),
+        msg=access_token.encode('utf-8'),
+        digestmod=hashlib.sha256
+    )
+    return h.hexdigest()
 
 
 if __name__ == '__main__':
