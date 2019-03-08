@@ -84,14 +84,16 @@ def fbconnect():
         return 'No access token found'
 
 
-@app.route('/fbdisconnect', methods=['GET'])
-def fbdisconnect():
-    access_token = request.json['data']
-    url = 'https://graph.facebook.com/%s/permissions' % access_token
+@app.route('/fbdelete', methods=['POST'])
+def fbDeletePermission():
+    facebook_id = request.json['data']['id']
+    access_token = request.json['data']['accessToken']
+    url = 'https://graph.facebook.com/%s/permissions?access_token=%s' % (
+        facebook_id, access_token)
     h = httplib2.Http()
     result = h.request(url, 'DELETE')[1]
     print(result)
-    return 'User Loggout'
+    return 'User permissions Deleted'
 
 
 def getUserID(email):
