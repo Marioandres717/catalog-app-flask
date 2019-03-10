@@ -111,6 +111,31 @@ def readItem(item_id):
         return 'Invalid ID'
 
 
+# Update Item
+@app.route('/item/<int:item_id>', methods=['PUT'])
+def updateItem(item_id):
+    try:
+        verified_token = verifyToken(request)
+        if verified_token is None:
+            return 'Invalid token'
+        data = request.json['data']
+        session = DBSession()
+        item = session.query(Item).filter_by(id=item_id).one()
+        if item.user_id != data['userId']:
+            return 'Invalid user; not owner of resource'
+        if 'name' in data:
+            item.name = data['name']
+        if 'name' in data:
+            item.description = data['description']
+        if 'picture' in data:
+            item.picture = data['picture']
+        session.add(item)
+        session.commit()
+        return jsonify(item.serialize)
+    except:
+        return 'Invalid ID'
+
+
 def verifyToken(request):
     try:
         # Check if the Authorization header is on the request
@@ -126,15 +151,15 @@ def verifyToken(request):
             access_token, app_id, app_secret)
         h = httplib2.Http()
         results = h.request(url, 'GET')[1]
-        verified_Token = json.loads(results)['data']
+        verified_token = json.loads(results)['data']
         # Checks if the app_id on the token is the same as our app_id
-        if (verified_Token['app_id'] != app_id):
+        if (verified_token['app_id'] != app_id):
             return None
         # Check if the token send by client is still valid
-        if (verified_Token['is_valid'] is not True):
+        if (verified_token['is_valid'] is not True):
             return None
         # Token is valid
-        return verified_Token
+        return verified_token
     except KeyError:
         return None
 
