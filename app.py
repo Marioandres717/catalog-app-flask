@@ -50,28 +50,25 @@ def items():
 
 @app.route('/fbconnect', methods=['POST'])
 def fbconnect():
-    try:
-        # verify Request Token
-        access_token = request.json['data']
-        verified_token = verifyToken(access_token)
-        if verified_token is None:
-            return 'Invalid Token'
-        # Retrieve user information
-        fb_user_id = verified_token['user_id']
-        app_secret = json.loads(open('fb_client_secrets.json', 'r').read())[
-            'web']['app_secret']
-        app_secret_proof = generateAppSecretProof(app_secret, access_token)
-        url = 'https://graph.facebook.com/%s?fields=name,email,picture&access_token=%s&appsecret_proof=%s' % (  # noqa
-            fb_user_id, access_token, app_secret_proof)
-        h = httplib2.Http()
-        results = h.request(url, 'GET')[1]
-        user_profile = json.loads(results)
-        user_id = getUserID(user_profile['email'])
-        if not user_id:
-            user_id = createUser(user_profile)
-        return jsonify(user_id)
-    except:
-        return 'No access token found'
+    # verify Authorization Token
+    verified_token = verifyToken(request)
+    if verified_token is None:
+        return 'Invalid Token'
+    # Retrieve user information
+    access_token = request.headers.environ['HTTP_AUTHORIZATION'].split('Bearer ')[1]  # noqa
+    fb_user_id = verified_token['user_id']
+    app_secret = json.loads(open('fb_client_secrets.json', 'r').read())[
+        'web']['app_secret']
+    app_secret_proof = generateAppSecretProof(app_secret, access_token)
+    url = 'https://graph.facebook.com/%s?fields=name,email,picture&access_token=%s&appsecret_proof=%s' % (  # noqa
+        fb_user_id, access_token, app_secret_proof)
+    h = httplib2.Http()
+    results = h.request(url, 'GET')[1]
+    user_profile = json.loads(results)
+    user_id = getUserID(user_profile['email'])
+    if not user_id:
+        user_id = createUser(user_profile)
+    return jsonify(user_id)
 
 
 @app.route('/fbdelete', methods=['POST'])
@@ -86,30 +83,48 @@ def fbDeletePermission():
     return 'User permissions Deleted'
 
 
-@app.route('/item/<int:item_id>/add ', methods=['POST'])
+@app.route('/item', methods=['POST'])
 def addItem():
-    return None
+    verified_token = verifyToken(request)
+    if verified_token is None:
+        return 'Invalid Token'
+    data = request.json['data']
+    session = DBSession()
+    newItem = Item(name=data['name'], description=data['description'],
+                   picture=data['picture'], category_id=data['categoryId'],
+                   user_id=data['userId'])
+    session.add(newItem)
+    session.commit()
+    item = session.query(Item).filter_by(name=data['name']).one()
+    return jsonify(item=item.serialize)
 
 
-def verifyToken(access_token):
-    # Verify Request token
-    app_id = json.loads(open('fb_client_secrets.json', 'r').read())[
-        'web']['app_id']
-    app_secret = json.loads(open('fb_client_secrets.json', 'r').read())[
-        'web']['app_secret']
-    url = 'https://graph.facebook.com/debug_token?input_token=%s&access_token=%s|%s' % (  # noqa
-        access_token, app_id, app_secret)
-    h = httplib2.Http()
-    results = h.request(url, 'GET')[1]
-    verified_Token = json.loads(results)['data']
-    # Checks if the app_id on the token is the same as our app_id
-    if (verified_Token['app_id'] != app_id):
+def verifyToken(request):
+    try:
+        # Check if the Authorization header is on the request
+        access_token = request.headers.environ['HTTP_AUTHORIZATION'].split('Bearer ')[1]  # noqa
+        if access_token == 'undefined':
+            return None
+        # Verify Request token
+        app_id = json.loads(open('fb_client_secrets.json', 'r').read())[
+            'web']['app_id']
+        app_secret = json.loads(open('fb_client_secrets.json', 'r').read())[
+            'web']['app_secret']
+        url = 'https://graph.facebook.com/debug_token?input_token=%s&access_token=%s|%s' % (  # noqa
+            access_token, app_id, app_secret)
+        h = httplib2.Http()
+        results = h.request(url, 'GET')[1]
+        verified_Token = json.loads(results)['data']
+        # Checks if the app_id on the token is the same as our app_id
+        if (verified_Token['app_id'] != app_id):
+            return None
+        # Check if the token send by client is still valid
+        if (verified_Token['is_valid'] is not True):
+            return None
+        # Token is valid
+        return verified_Token
+    except KeyError:
         return None
-    # Check if the token send by client is still valid
-    if (verified_Token['is_valid'] is not True):
-        return None
-    # Token is valid
-    return verified_Token
 
 
 def getUserID(email):
