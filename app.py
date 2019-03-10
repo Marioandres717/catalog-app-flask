@@ -83,6 +83,7 @@ def fbDeletePermission():
     return 'User permissions Deleted'
 
 
+# Create Item
 @app.route('/item', methods=['POST'])
 def addItem():
     verified_token = verifyToken(request)
@@ -97,6 +98,17 @@ def addItem():
     session.commit()
     item = session.query(Item).filter_by(name=data['name']).one()
     return jsonify(item=item.serialize)
+
+
+# Read Item
+@app.route('/item/<int:item_id>', methods=['GET'])
+def readItem(item_id):
+    try:
+        session = DBSession()
+        item = session.query(Item).filter_by(id=item_id).one()
+        return jsonify(item.serialize)
+    except:
+        return 'Invalid ID'
 
 
 def verifyToken(request):
