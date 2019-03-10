@@ -136,6 +136,25 @@ def updateItem(item_id):
         return 'Invalid ID'
 
 
+# Delete Item
+@app.route('/item/<int:item_id>', methods=['DELETE'])
+def deleteItem(item_id):
+    try:
+        verified_token = verifyToken(request)
+        if verified_token is None:
+            return 'invalid token'
+        data = request.json['data']
+        session = DBSession()
+        item = session.query(Item).filter_by(id=item_id).one()
+        if item.user_id != data['userId']:
+            return 'invalid user; not owner of resource'
+        session.delete(item)
+        session.commit()
+        return 'Item succesfully deleted'
+    except:
+        return 'Invalid ID'
+
+
 def verifyToken(request):
     try:
         # Check if the Authorization header is on the request
