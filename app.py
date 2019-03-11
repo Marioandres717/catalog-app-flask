@@ -125,7 +125,7 @@ def updateItem(item_id):
             return 'Invalid user; not owner of resource'
         if 'name' in data:
             item.name = data['name']
-        if 'name' in data:
+        if 'description' in data:
             item.description = data['description']
         if 'picture' in data:
             item.picture = data['picture']
@@ -172,6 +172,63 @@ def addCategory():
     session.commit()
     category = session.query(Category).filter_by(name=data['name']).one()
     return jsonify(category=category.serialize)
+
+
+# Read Category
+@app.route('/category/<int:category_id>', methods=['GET'])
+def readCategory(category_id):
+    try:
+        session = DBSession()
+        category = session.query(Category).filter_by(id=category_id).one()
+        return jsonify(category.serialize)
+    except:
+        return 'Invalid ID'
+
+
+# Update Category
+@app.route('/category/<int:category_id>', methods=['PUT'])
+def updateCategory(category_id):
+    try:
+        verified_token = verifyToken(request)
+        if verified_token is None:
+            return 'Invalid token'
+        data = request.json['data']
+        session = DBSession()
+        user = session.query(User).filter_by(id=data['userId']).one()
+        category = session.query(Category).filter_by(id=category_id).one()
+        if user.role != 'admin':
+            return 'Invalid role for this operation'
+        if 'name' in data:
+            category.name = data['name']
+        if 'description' in data:
+            category.description = data['description']
+        if 'picture' in data:
+            category.picture = data['picture']
+        session.add(category)
+        session.commit()
+        return jsonify(category.serialize)
+    except:
+        return 'Invalid ID'
+
+
+# Delete Category
+@app.route('/category/<int:category_id>', methods=['DELETE'])
+def deleteCategory(category_id):
+    try:
+        verified_token = verifyToken(request)
+        if verified_token is None:
+            return 'Invalid token'
+        data = request.json['data']
+        session = DBSession()
+        user = session.query(User).filter_by(id=data['userId']).one()
+        category = session.query(Category).filter_by(id=category_id).one()
+        if user.role != 'admin':
+            return 'Invalid role for this operation'
+        session.delete(category)
+        session.commit()
+        return 'Category successfully delete'
+    except:
+        return 'Invalid ID'
 
 
 def verifyToken(request):
