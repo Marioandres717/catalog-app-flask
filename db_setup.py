@@ -19,6 +19,7 @@ class User(Base):
     name = Column(String(80))
     email = Column(String(80), nullable=False)
     picture = Column(String(250))
+    role = Column(String(80), default="basic", nullable=False)
 
     @property
     def serialize(self):

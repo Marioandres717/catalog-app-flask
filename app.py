@@ -155,6 +155,25 @@ def deleteItem(item_id):
         return 'Invalid ID'
 
 
+# Create Category
+@app.route('/category', methods=['POST'])
+def addCategory():
+    verified_token = verifyToken(request)
+    if verified_token is None:
+        return 'Invalid Token'
+    data = request.json['data']
+    session = DBSession()
+    user = session.query(User).filter_by(id=data['userId'])
+    if user.role != 'admin':
+        return 'Invalid Role for this operation'
+    newCategory = Category(name=data['name'], description=data['description'],
+                           picture=data['picture'])
+    session.add(newCategory)
+    session.commit()
+    category = session.query(Category).filter_by(name=data['name']).one()
+    return jsonify(category=category.serialize)
+
+
 def verifyToken(request):
     try:
         # Check if the Authorization header is on the request
