@@ -4,3 +4,4 @@ store.db
 .vscode/
 
 fb_client_secrets.json
+.flaskenv
