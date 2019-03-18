@@ -70,7 +70,7 @@ def addItem(category_id):
         verified_token = verifyToken(request)
         if verified_token is None:
             return 'Invalid Token'
-        data = request.json['data']
+        data = request.json
         newItem = Item(name=data['name'], description=data['description'],
                        picture=data['picture'], category_id=data['categoryId'],
                        user_id=data['userId'])
@@ -109,7 +109,7 @@ def updateItem(category_id, item_id):
         verified_token = verifyToken(request)
         if verified_token is None:
             return 'Invalid token'
-        data = request.json['data']
+        data = request.json
         item = Item.query.filter_by(id=item_id).first()
         if item.user_id != data['userId']:
             return 'Invalid user; not owner of resource'
@@ -133,7 +133,7 @@ def deleteItem(category_id, item_id):
         verified_token = verifyToken(request)
         if verified_token is None:
             return 'invalid token'
-        data = request.json['data']
+        data = request.json
         item = Item.query.filter_by(id=item_id).first()
         if item.user_id != data['userId']:
             return 'invalid user; not owner of resource'
@@ -151,7 +151,7 @@ def addCategory():
         verified_token = verifyToken(request)
         if verified_token is None:
             return 'Invalid Token'
-        data = request.json['data']
+        data = request.json
         user = User.query.filter_by(id=data['userId']).first()
         if user.role != 'admin':
             return 'Invalid Role for this operation'
@@ -182,7 +182,7 @@ def updateCategory(category_id):
         verified_token = verifyToken(request)
         if verified_token is None:
             return 'Invalid token'
-        data = request.json['data']
+        data = request.json
         user = User.query.filter_by(id=data['userId']).first()
         category = Category.query.filter_by(id=category_id).first()
         if user.role != 'admin':
@@ -207,7 +207,7 @@ def deleteCategory(category_id):
         verified_token = verifyToken(request)
         if verified_token is None:
             return 'Invalid token'
-        data = request.json['data']
+        data = request.json
         user = User.query.filter_by(id=data['userId']).one()
         category = Category.query.filter_by(id=category_id).one()
         if user.role != 'admin':
