@@ -82,6 +82,16 @@ def addItem(category_id):
         return 'Invalid input for creating item'
 
 
+# Read Items
+@app.route('/categories/<int:category_id>/items')
+def readItems(category_id):
+    try:
+        items = Item.query.filter_by(category_id=category_id).all()
+        return jsonify(items=[i.serialize for i in items])
+    except:
+        return 'Invalid ID'
+
+
 # Read Item
 @app.route('/categories/<int:category_id>/items/<int:item_id>')
 def readItem(category_id, item_id):
