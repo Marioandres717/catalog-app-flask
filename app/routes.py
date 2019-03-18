@@ -10,19 +10,13 @@ import json
 
 
 @app.route('/')
-@app.route('/main')
+@app.route('/home')
 def home():
     categories = Category.query.all()
     items = Item.query.all()
     response = jsonify(categories=[r.serialize for r in categories], items=[
                        i.serialize for i in items])
     return response
-
-
-@app.route('/users', methods=['GET'])
-def user():
-    users = User.query.all()
-    return jsonify(users=[u.serialize for u in users])
 
 
 @app.route('/items')
@@ -70,8 +64,8 @@ def fbDeletePermission():
 
 
 # Create Item
-@app.route('/item', methods=['POST'])
-def addItem():
+@app.route('/categories/<int:category_id>/items', methods=['POST'])
+def addItem(category_id):
     try:
         verified_token = verifyToken(request)
         if verified_token is None:
@@ -89,18 +83,18 @@ def addItem():
 
 
 # Read Item
-@app.route('/item/<int:item_id>', methods=['GET'])
-def readItem(item_id):
+@app.route('/categories/<int:category_id>/items/<int:item_id>')
+def readItem(category_id, item_id):
     try:
         item = Item.query.filter_by(id=item_id).first()
-        return jsonify(item.serialize)
+        return jsonify(item=item.serialize)
     except:
         return 'Invalid ID'
 
 
 # Update Item
-@app.route('/item/<int:item_id>', methods=['PUT'])
-def updateItem(item_id):
+@app.route('/categories/<int:category_id>/items/<int:item_id>', methods=['PUT'])  # noqa
+def updateItem(category_id, item_id):
     try:
         verified_token = verifyToken(request)
         if verified_token is None:
@@ -123,8 +117,8 @@ def updateItem(item_id):
 
 
 # Delete Item
-@app.route('/item/<int:item_id>', methods=['DELETE'])
-def deleteItem(item_id):
+@app.route('/categories/<int:category_id>/items/<int:item_id>', methods=['DELETE'])  # noqa
+def deleteItem(category_id, item_id):
     try:
         verified_token = verifyToken(request)
         if verified_token is None:
@@ -141,7 +135,7 @@ def deleteItem(item_id):
 
 
 # Create Category
-@app.route('/category', methods=['POST'])
+@app.route('/categories', methods=['POST'])
 def addCategory():
     try:
         verified_token = verifyToken(request)
@@ -162,7 +156,7 @@ def addCategory():
 
 
 # Read Category
-@app.route('/category/<int:category_id>', methods=['GET'])
+@app.route('/categories/<int:category_id>', methods=['GET'])
 def readCategory(category_id):
     try:
         category = Category.query.filter_by(id=category_id).first()
@@ -172,7 +166,7 @@ def readCategory(category_id):
 
 
 # Update Category
-@app.route('/category/<int:category_id>', methods=['PUT'])
+@app.route('/categories/<int:category_id>', methods=['PUT'])
 def updateCategory(category_id):
     try:
         verified_token = verifyToken(request)
@@ -197,7 +191,7 @@ def updateCategory(category_id):
 
 
 # Delete Category
-@app.route('/category/<int:category_id>', methods=['DELETE'])
+@app.route('/categories/<int:category_id>', methods=['DELETE'])
 def deleteCategory(category_id):
     try:
         verified_token = verifyToken(request)
