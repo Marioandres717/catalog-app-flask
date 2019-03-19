@@ -133,9 +133,10 @@ def deleteItem(category_id, item_id):
         verified_token = verifyToken(request)
         if verified_token is None:
             return 'invalid token'
-        data = request.json
+
+        userId = fbconnect()
         item = Item.query.filter_by(id=item_id).first()
-        if item.user_id != data['userId']:
+        if item.user_id != userId.json:
             return 'invalid user; not owner of resource'
         db.session.delete(item)
         db.session.commit()
