@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from app import app, db
+from app import app, db, jwt
 from app.models import User, Item, Category
 import httplib2
 import hashlib
@@ -7,6 +7,10 @@ import hmac
 from flask import request, jsonify
 import os
 import json
+from flask_jwt_extended import (
+    jwt_required, create_access_token, jwt_refresh_token_required,
+    get_jwt_identity, create_refresh_token, set_access_cookies,
+    set_refresh_cookies, unset_jwt_cookies)
 
 
 @app.route('/')
@@ -29,9 +33,9 @@ def items():
 @app.route('/fbconnect', methods=['POST'])
 def fbconnect():
     # verify Authorization Token
-    verified_token = verifyToken(request)
+    verified_token = verifyFBToken(request)
     if verified_token is None:
-        return 'Invalid Token'
+        return 'Invalid Token', 401
     # Retrieve user information
     access_token = request.headers.environ['HTTP_AUTHORIZATION'].split('Bearer ')[1]  # noqa
     fb_user_id = verified_token['user_id']
@@ -45,7 +49,15 @@ def fbconnect():
     user_id = getUserID(user_profile['email'])
     if not user_id:
         user_id = createUser(user_profile)
-    return jsonify(user_id)
+    # create the tokens we will send back to the user
+    jwt_access_token = create_access_token(identity=user_id)
+    jwt_refresh_token = create_refresh_token(identity=user_id)
+
+    # Set the jwt cookies in response
+    response = jsonify(user_id)
+    set_access_cookies(response, jwt_access_token)
+    set_refresh_cookies(response, jwt_refresh_token)
+    return response, 200
 
 
 # FB delete user permission for the App
@@ -63,25 +75,6 @@ def fbDeletePermission():
     return 'User permissions Deleted'
 
 
-# Create Item
-@app.route('/categories/<int:category_id>/items', methods=['POST'])
-def addItem(category_id):
-    try:
-        verified_token = verifyToken(request)
-        if verified_token is None:
-            return 'Invalid Token'
-        data = request.json
-        newItem = Item(name=data['name'], description=data['description'],
-                       picture=data['picture'], category_id=data['categoryId'],
-                       user_id=data['userId'])
-        db.session.add(newItem)
-        db.session.commit()
-        item = Item.query.filter_by(name=data['name']).first()
-        return jsonify(item=item.serialize)
-    except:
-        return 'Invalid input for creating item'
-
-
 # Read Items
 @app.route('/categories/<int:category_id>/items')
 def readItems(category_id):
@@ -90,6 +83,24 @@ def readItems(category_id):
         return jsonify(items=[i.serialize for i in items])
     except:
         return 'Invalid ID'
+
+
+# Create Item
+@app.route('/categories/<int:category_id>/items', methods=['POST'])
+@jwt_required
+def addItem(category_id):
+    try:
+        user_id = get_jwt_identity()
+        data = request.json
+        newItem = Item(name=data['name'], description=data['description'],
+                       picture=data['picture'], category_id=data['categoryId'],
+                       user_id=user_id)
+        db.session.add(newItem)
+        db.session.commit()
+        item = Item.query.filter_by(name=data['name']).first()
+        return jsonify(item=item.serialize)
+    except:
+        return 'Invalid input for creating item'
 
 
 # Read Item
@@ -104,15 +115,14 @@ def readItem(category_id, item_id):
 
 # Update Item
 @app.route('/categories/<int:category_id>/items/<int:item_id>', methods=['PUT'])  # noqa
+@jwt_required
 def updateItem(category_id, item_id):
     try:
-        verified_token = verifyToken(request)
-        if verified_token is None:
-            return 'Invalid token'
+        user_id = get_jwt_identity()
         data = request.json
         item = Item.query.filter_by(id=item_id).first()
-        if item.user_id != data['userId']:
-            return 'Invalid user; not owner of resource'
+        if item.user_id != user_id:
+            return 'Invalid user; not owner of resource', 401
         if 'name' in data:
             item.name = data['name']
         if 'description' in data:
@@ -123,20 +133,18 @@ def updateItem(category_id, item_id):
         db.session.commit()
         return jsonify(item.serialize)
     except:
-        return 'Invalid ID'
+        return 'Invalid ID', 401
 
 
 # Delete Item
 @app.route('/categories/<int:category_id>/items/<int:item_id>', methods=['DELETE'])  # noqa
+@jwt_required
 def deleteItem(category_id, item_id):
     try:
-        verified_token = verifyToken(request)
-        if verified_token is None:
-            return 'invalid token'
-
-        userId = fbconnect()
+        # USERID FROM JWT
+        user_id = get_jwt_identity()
         item = Item.query.filter_by(id=item_id).first()
-        if item.user_id != userId.json:
+        if item.user_id != user_id:
             return 'invalid user; not owner of resource'
         db.session.delete(item)
         db.session.commit()
@@ -147,13 +155,12 @@ def deleteItem(category_id, item_id):
 
 # Create Category
 @app.route('/categories', methods=['POST'])
+@jwt_required
 def addCategory():
     try:
-        verified_token = verifyToken(request)
-        if verified_token is None:
-            return 'Invalid Token'
+        user_id = get_jwt_identity()
         data = request.json
-        user = User.query.filter_by(id=data['userId']).first()
+        user = User.query.filter_by(id=user_id).first()
         if user.role != 'admin':
             return 'Invalid Role for this operation'
         newCategory = Category(name=data['name'], description=data['description'],  # noqa
@@ -178,13 +185,12 @@ def readCategory(category_id):
 
 # Update Category
 @app.route('/categories/<int:category_id>', methods=['PUT'])
+@jwt_required
 def updateCategory(category_id):
     try:
-        verified_token = verifyToken(request)
-        if verified_token is None:
-            return 'Invalid token'
+        user_id = get_jwt_identity()
         data = request.json
-        user = User.query.filter_by(id=data['userId']).first()
+        user = User.query.filter_by(id=user_id).first()
         category = Category.query.filter_by(id=category_id).first()
         if user.role != 'admin':
             return 'Invalid role for this operation'
@@ -203,13 +209,12 @@ def updateCategory(category_id):
 
 # Delete Category
 @app.route('/categories/<int:category_id>', methods=['DELETE'])
+@jwt_required
 def deleteCategory(category_id):
     try:
-        verified_token = verifyToken(request)
-        if verified_token is None:
-            return 'Invalid token'
+        user_id = get_jwt_identity()
         data = request.json
-        user = User.query.filter_by(id=data['userId']).one()
+        user = User.query.filter_by(id=user_id).one()
         category = Category.query.filter_by(id=category_id).one()
         if user.role != 'admin':
             return 'Invalid role for this operation'
@@ -220,7 +225,35 @@ def deleteCategory(category_id):
         return 'Invalid ID'
 
 
-def verifyToken(request):
+# Same thing as login here, except we are only setting a new cookie
+# for the access token.
+@app.route('/token/refresh', methods=['POST'])
+@jwt_refresh_token_required
+def refresh():
+    # Create the new access token
+    current_user = get_jwt_identity()
+    access_token = create_access_token(identity=current_user)
+
+    # Set the JWT access cookie in the response
+    resp = jsonify({'refresh': True})
+    set_access_cookies(resp, access_token)
+    return resp, 200
+
+
+# Because the JWTs are stored in an httponly cookie now, we cannot
+# log the user out by simply deleting the cookie in the frontend.
+# We need the backend to send us a response to delete the cookies
+# in order to logout. unset_jwt_cookies is a helper function to
+# do just that.
+@app.route('/token/remove', methods=['POST'])
+def logout():
+    resp = jsonify({'logout': True})
+    unset_jwt_cookies(resp)
+    return resp, 200
+
+
+# Verifies the fb access token send by client
+def verifyFBToken(request):
     try:
         # Check if the Authorization header is on the request
         access_token = request.headers.environ['HTTP_AUTHORIZATION'].split('Bearer ')[1]  # noqa
