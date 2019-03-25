@@ -20,13 +20,13 @@ def home():
     items = Item.query.all()
     response = jsonify(categories=[r.serialize for r in categories], items=[
                        i.serialize for i in items])
-    return response
+    return response, 200
 
 
 @app.route('/items')
 def items():
     items = Item.query.all()
-    return jsonify(items=[i.serialize for i in items])
+    return jsonify(items=[i.serialize for i in items]), 200
 
 
 # FB login
@@ -72,7 +72,7 @@ def fbDeletePermission():
     h = httplib2.Http()
     result = h.request(url, 'DELETE')[1]
     print(result)
-    return 'User permissions Deleted'
+    return 'User permissions Deleted', 200
 
 
 # Read Items
@@ -80,9 +80,9 @@ def fbDeletePermission():
 def readItems(category_id):
     try:
         items = Item.query.filter_by(category_id=category_id).all()
-        return jsonify(items=[i.serialize for i in items])
+        return jsonify(items=[i.serialize for i in items]), 200
     except:
-        return 'Invalid ID'
+        return 'Invalid ID', 401
 
 
 # Create Item
@@ -98,9 +98,9 @@ def addItem(category_id):
         db.session.add(newItem)
         db.session.commit()
         item = Item.query.filter_by(name=data['name']).first()
-        return jsonify(item=item.serialize)
+        return jsonify(item=item.serialize), 200
     except:
-        return 'Invalid input for creating item'
+        return 'Invalid input for creating item', 401
 
 
 # Read Item
@@ -108,9 +108,9 @@ def addItem(category_id):
 def readItem(category_id, item_id):
     try:
         item = Item.query.filter_by(id=item_id).first()
-        return jsonify(item=item.serialize)
+        return jsonify(item=item.serialize), 200
     except:
-        return 'Invalid ID'
+        return 'Invalid ID', 401
 
 
 # Update Item
@@ -131,7 +131,7 @@ def updateItem(category_id, item_id):
             item.picture = data['picture']
         db.session.add(item)
         db.session.commit()
-        return jsonify(item.serialize)
+        return jsonify(item.serialize), 200
     except:
         return 'Invalid ID', 401
 
@@ -145,12 +145,12 @@ def deleteItem(category_id, item_id):
         user_id = get_jwt_identity()
         item = Item.query.filter_by(id=item_id).first()
         if item.user_id != user_id:
-            return 'invalid user; not owner of resource'
+            return 'invalid user; not owner of resource', 401
         db.session.delete(item)
         db.session.commit()
-        return 'Item succesfully deleted'
+        return 'Item succesfully deleted', 200
     except:
-        return 'Invalid ID'
+        return 'Invalid ID', 401
 
 
 # Create Category
@@ -162,15 +162,15 @@ def addCategory():
         data = request.json
         user = User.query.filter_by(id=user_id).first()
         if user.role != 'admin':
-            return 'Invalid Role for this operation'
+            return 'Invalid Role for this operation', 401
         newCategory = Category(name=data['name'], description=data['description'],  # noqa
                                picture=data['picture'])
         db.session.add(newCategory)
         db.session.commit()
         category = Category.query.filter_by(name=data['name']).first()
-        return jsonify(category=category.serialize)
+        return jsonify(category=category.serialize), 200
     except:
-        return 'Invalid Input for creating category'
+        return 'Invalid Input for creating category', 401
 
 
 # Read Category
@@ -178,9 +178,9 @@ def addCategory():
 def readCategory(category_id):
     try:
         category = Category.query.filter_by(id=category_id).first()
-        return jsonify(category.serialize)
+        return jsonify(category.serialize), 200
     except:
-        return 'Invalid ID'
+        return 'Invalid ID', 401
 
 
 # Update Category
@@ -193,7 +193,7 @@ def updateCategory(category_id):
         user = User.query.filter_by(id=user_id).first()
         category = Category.query.filter_by(id=category_id).first()
         if user.role != 'admin':
-            return 'Invalid role for this operation'
+            return 'Invalid role for this operation', 401
         if 'name' in data:
             category.name = data['name']
         if 'description' in data:
@@ -202,9 +202,9 @@ def updateCategory(category_id):
             category.picture = data['picture']
         db.session.add(category)
         db.session.commit()
-        return jsonify(category.serialize)
+        return jsonify(category.serialize), 200
     except:
-        return 'Invalid ID'
+        return 'Invalid ID', 401
 
 
 # Delete Category
@@ -217,12 +217,12 @@ def deleteCategory(category_id):
         user = User.query.filter_by(id=user_id).one()
         category = Category.query.filter_by(id=category_id).one()
         if user.role != 'admin':
-            return 'Invalid role for this operation'
+            return 'Invalid role for this operation', 401
         db.session.delete(category)
         db.session.commit()
-        return 'Category successfully delete'
+        return 'Category successfully delete', 200
     except:
-        return 'Invalid ID'
+        return 'Invalid ID', 401
 
 
 # Same thing as login here, except we are only setting a new cookie
