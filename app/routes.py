@@ -13,14 +13,21 @@ from flask_jwt_extended import (
     set_refresh_cookies, unset_jwt_cookies)
 
 
+# CHANGE THIS TO USE JOINS OR SOMETHING IN THE DB, this time complexity is bad O(n^2)
+
 @app.route('/')
 @app.route('/home')
 def home():
     categories = Category.query.all()
-    items = Item.query.all()
-    response = jsonify(categories=[r.serialize for r in categories], items=[
-                       i.serialize for i in items])
-    return response, 200
+    categoriesArr = []
+    for c in categories:
+        items = c.items.all()
+        temp1 = {}
+        temp1[c.name] = c.serialize
+        temp1[c.name]['items'] = [x.serialize for x in items]
+        categoriesArr.append(temp1)
+
+    return jsonify(categories=categoriesArr), 200
 
 
 @app.route('/items')
