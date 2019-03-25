@@ -22,10 +22,9 @@ def home():
     categoriesArr = []
     for c in categories:
         items = c.items.all()
-        temp1 = {}
-        temp1[c.name] = c.serialize
-        temp1[c.name]['items'] = [x.serialize for x in items]
-        categoriesArr.append(temp1)
+        categorySerial = c.serialize
+        categorySerial['items'] = [x.serialize for x in items]
+        categoriesArr.append(categorySerial)
 
     return jsonify(categories=categoriesArr), 200
 
