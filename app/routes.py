@@ -13,7 +13,7 @@ from flask_jwt_extended import (
     set_refresh_cookies, unset_jwt_cookies)
 
 
-# CHANGE THIS TO USE JOINS OR SOMETHING IN THE DB, this time complexity is bad O(n^2)
+# CHANGE THIS TO USE JOINS OR SOMETHING IN THE DB
 
 @app.route('/')
 @app.route('/home')
@@ -61,8 +61,8 @@ def fbconnect():
 
     # Set the jwt cookies in response
     response = jsonify(user_id)
-    set_access_cookies(response, jwt_access_token)
-    set_refresh_cookies(response, jwt_refresh_token)
+    set_access_cookies(response, jwt_access_token, max_age=3600)
+    set_refresh_cookies(response, jwt_refresh_token, max_age=3600)
     return response, 200
 
 

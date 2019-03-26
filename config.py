@@ -11,3 +11,4 @@ class Config(object):
     JWT_COOKIE_CRSF_PROTECT = True
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET')
     JWT_ACCESS_TOKEN_EXPIRES = 3600
+    JWT_SESSION_COOKIE = 3600
