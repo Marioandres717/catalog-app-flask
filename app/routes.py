@@ -41,7 +41,7 @@ def fbconnect():
     # verify Authorization Token
     verified_token = verifyFBToken(request)
     if verified_token[1] == 401:
-        return verify_token[0], 401
+        return verified_token[0], 401
     # Retrieve user information
     access_token = request.headers.environ['HTTP_AUTHORIZATION'].split('Bearer ')[1]  # noqa
     fb_user_id = verified_token[0]
