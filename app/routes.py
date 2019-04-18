@@ -273,7 +273,7 @@ def verifyFBToken(request):
         # Check if the Authorization header is on the request
         access_token = request.headers.environ['HTTP_AUTHORIZATION'].split('Bearer ')[1]  # noqa
         if access_token == 'undefined':
-            return None
+            return 'Missing Access Token from header', 401
         # Verify Request token
         app_id = os.environ.get('FB_APP_ID')
         app_secret = os.environ.get('FB_APP_SECRET')
@@ -284,14 +284,14 @@ def verifyFBToken(request):
         verified_token = json.loads(results)['data']
         # Checks if the app_id on the token is the same as our app_id
         if (verified_token['app_id'] != app_id):
-            return None
+            return 'App id does not match real app id', 401
         # Check if the token send by client is still valid
         if (verified_token['is_valid'] is not True):
-            return None
+            return 'Verified token is invalid', 401
         # Token is valid
         return verified_token
     except KeyError:
-        return None
+        return 'Another Error', 401
 
 
 def getUserID(email):
