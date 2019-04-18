@@ -290,8 +290,8 @@ def verifyFBToken(request):
             return 'Verified token is invalid', 401
         # Token is valid
         return verified_token['user_id'], 200
-    except KeyError:
-        return 'Another Error', 401
+    except Exception as e:
+        return e, 401
 
 
 def getUserID(email):
