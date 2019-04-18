@@ -40,11 +40,11 @@ def items():
 def fbconnect():
     # verify Authorization Token
     verified_token = verifyFBToken(request)
-    if verified_token is None:
-        return 'Invalid Token', 401
+    if verified_token[1] == 401:
+        return verify_token[0], 401
     # Retrieve user information
     access_token = request.headers.environ['HTTP_AUTHORIZATION'].split('Bearer ')[1]  # noqa
-    fb_user_id = verified_token['user_id']
+    fb_user_id = verified_token[0]
     app_secret = os.environ.get('FB_APP_SECRET')
     app_secret_proof = generateAppSecretProof(app_secret, access_token)
     url = 'https://graph.facebook.com/%s?fields=name,email,picture&access_token=%s&appsecret_proof=%s' % (  # noqa
@@ -289,7 +289,7 @@ def verifyFBToken(request):
         if (verified_token['is_valid'] is not True):
             return 'Verified token is invalid', 401
         # Token is valid
-        return verified_token
+        return verified_token['user_id'], 200
     except KeyError:
         return 'Another Error', 401
 
