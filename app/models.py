@@ -67,7 +67,8 @@ class Item(db.Model):
             'name': self.name,
             'picture': self.picture,
             'description': self.description,
-            'userId': self.user_id
+            'userId': self.user_id,
+            'categoryId': self.category_id,
         }
 
     def __repr__(self):

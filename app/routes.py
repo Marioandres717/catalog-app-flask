@@ -135,6 +135,8 @@ def updateItem(category_id, item_id):
             item.description = data['description']
         if 'picture' in data:
             item.picture = data['picture']
+        if 'categoryId' in data:
+            item.category_id = data['categoryId']
         db.session.add(item)
         db.session.commit()
         return jsonify(item.serialize), 200
@@ -177,6 +179,13 @@ def addCategory():
         return jsonify(category=category.serialize), 200
     except:
         return 'Invalid Input for creating category', 401
+
+
+# Read Categories
+@app.route('/categories', methods=['GET'])
+def readCategories():
+    categories = Category.query.all()
+    return jsonify(categories=[c.serialize for c in categories])
 
 
 # Read Category
