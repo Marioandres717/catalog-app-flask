@@ -12,4 +12,4 @@ class Config(object):
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET')
     JWT_ACCESS_TOKEN_EXPIRES = 3600
     JWT_SESSION_COOKIE = 3600
-    JWT_COOKIE_DOMAIN = ['www.mynerdystore.com', 'mynerdystore.com', 'api.mynerdystore.com']
+    JWT_COOKIE_DOMAIN = 'mynerdystore.com'
