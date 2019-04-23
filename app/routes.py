@@ -18,6 +18,11 @@ from flask_jwt_extended import (
 @app.route('/')
 @app.route('/home')
 def home():
+    data = retrieveAllData()
+    return jsonify(categories=data), 200
+
+
+def retrieveAllData():
     categories = Category.query.all()
     categoriesArr = []
     for c in categories:
@@ -26,7 +31,7 @@ def home():
         categorySerial['items'] = [x.serialize for x in items]
         categoriesArr.append(categorySerial)
 
-    return jsonify(categories=categoriesArr), 200
+    return categoriesArr
 
 
 @app.route('/items')
@@ -104,7 +109,8 @@ def addItem(category_id):
         db.session.add(newItem)
         db.session.commit()
         item = Item.query.filter_by(name=data['name']).first()
-        return jsonify(item=item.serialize), 200
+        data = retrieveAllData()
+        return jsonify(data=data), 200
     except:
         return 'Invalid input for creating item', 401
 
@@ -139,7 +145,8 @@ def updateItem(category_id, item_id):
             item.category_id = data['categoryId']
         db.session.add(item)
         db.session.commit()
-        return jsonify(item.serialize), 200
+        data = retrieveAllData()
+        return jsonify(data=data), 200
     except:
         return 'Invalid ID', 401
 
@@ -156,7 +163,8 @@ def deleteItem(category_id, item_id):
             return 'invalid user; not owner of resource', 401
         db.session.delete(item)
         db.session.commit()
-        return 'Item succesfully deleted', 200
+        data = retrieveAllData()
+        return jsonify(data=data), 200
     except:
         return 'Invalid ID', 401
 
@@ -270,26 +278,26 @@ def logout():
 # Verifies the fb access token send by client
 def verifyFBToken(request):
         # Check if the Authorization header is on the request
-        access_token = request.headers.environ['HTTP_AUTHORIZATION'].split('Bearer ')[1]  # noqa
-        if access_token == 'undefined':
-            return 'Missing Access Token from header', 401
-        # Verify Request token
-        app_id = os.environ.get('FB_APP_ID')
-        app_secret = os.environ.get('FB_APP_SECRET')
-        url = 'https://graph.facebook.com/debug_token?input_token=%s&access_token=%s|%s' % (  # noqa
-            access_token, app_id, app_secret)
-        h = httplib2.Http()
-        results = h.request(url, 'GET')[1]
-        verified_token = json.loads(results)['data']
-        # Checks if the app_id on the token is the same as our app_id
-        if (verified_token['app_id'] != app_id):
-            return 'App id does not match real app id', 401
-        # Check if the token send by client is still valid
-        if (verified_token['is_valid'] is not True):
-            return 'Verified token is invalid', 401
-        # Token is valid
-        return verified_token['user_id'], 200
-
+    access_token = request.headers.environ['HTTP_AUTHORIZATION'].split('Bearer ')[1]  # noqa
+    if access_token == 'undefined':
+        return 'Missing Access Token from header', 401
+    # Verify Request token
+    app_id = os.environ.get('FB_APP_ID')
+    app_secret = os.environ.get('FB_APP_SECRET')
+    url = 'https://graph.facebook.com/debug_token?input_token=%s&access_token=%s|%s' % (  # noqa
+        access_token, app_id, app_secret)
+    h = httplib2.Http()
+    results = h.request(url, 'GET')[1]
+    print(results)
+    verified_token = json.loads(results)['data']
+    # Checks if the app_id on the token is the same as our app_id
+    if (verified_token['app_id'] != app_id):
+        return 'App id does not match real app id', 401
+    # Check if the token send by client is still valid
+    if (verified_token['is_valid'] is not True):
+        return 'Verified token is invalid', 401
+    # Token is valid
+    return verified_token['user_id'], 200
 
 
 def getUserID(email):
