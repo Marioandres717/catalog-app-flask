@@ -109,8 +109,7 @@ def addItem(category_id):
         db.session.add(newItem)
         db.session.commit()
         item = Item.query.filter_by(name=data['name']).first()
-        data = retrieveAllData()
-        return jsonify(data=data), 200
+        return jsonify(item=item.serialize), 200
     except:
         return 'Invalid input for creating item', 401
 
@@ -145,8 +144,7 @@ def updateItem(category_id, item_id):
             item.category_id = data['categoryId']
         db.session.add(item)
         db.session.commit()
-        data = retrieveAllData()
-        return jsonify(data=data), 200
+        return jsonify(item=item.serialize), 200
     except:
         return 'Invalid ID', 401
 
@@ -163,8 +161,7 @@ def deleteItem(category_id, item_id):
             return 'invalid user; not owner of resource', 401
         db.session.delete(item)
         db.session.commit()
-        data = retrieveAllData()
-        return jsonify(data=data), 200
+        return jsonify(item=item.serialize), 200
     except:
         return 'Invalid ID', 401
 
