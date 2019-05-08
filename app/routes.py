@@ -285,7 +285,6 @@ def verifyFBToken(request):
         access_token, app_id, app_secret)
     h = httplib2.Http()
     results = h.request(url, 'GET')[1]
-    print(results)
     verified_token = json.loads(results)['data']
     # Checks if the app_id on the token is the same as our app_id
     if (verified_token['app_id'] != app_id):
