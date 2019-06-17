@@ -2,6 +2,3 @@ __pycache__/
 env/
 store.db
 .vscode/
-
-fb_client_secrets.json
-.flaskenv
