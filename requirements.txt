@@ -1,6 +1,6 @@
 alembic==1.0.8
 autopep8==1.4.3
-certifi==2018.11.29
+certifi==2022.12.7
 chardet==3.0.4
 Click==7.0
 Flask==1.0.2
@@ -26,7 +26,7 @@ urllib3==1.24.1
 Werkzeug==0.14.1
 alembic==1.0.8
 autopep8==1.4.3
-certifi==2018.11.29
+certifi==2022.12.7
 chardet==3.0.4
 Click==7.0
 Flask==1.0.2
